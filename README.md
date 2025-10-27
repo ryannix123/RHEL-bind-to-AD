@@ -1,4 +1,4 @@
-# 🧩 Join RHEL to Active Directory with SSSD + Sudo Integration
+# 🧩 Join RHEL to Active Directory (AD) with SSSD + sudo AD group Integration
 
 ## Overview
 
