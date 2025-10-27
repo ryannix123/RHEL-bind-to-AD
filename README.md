@@ -75,7 +75,7 @@ You can override these via:
 
 ## 🔐 Secure Password Handling
 
-It’s best practice **not to store plaintext AD passwords**.  
+It's best practice **not to store plaintext AD passwords**.  
 Instead, encrypt them with **Ansible Vault**:
 
 ```bash
@@ -179,7 +179,7 @@ After the playbook completes successfully:
   ```
 
 - **Centralize sudo in AD:**  
-  Configure `sudo_provider = ad` and store sudo rules in Active Directory’s LDAP schema.
+  Configure `sudo_provider = ad` and store sudo rules in Active Directory's LDAP schema.
 
 - **Multi-Domain Forests:**  
   Extend the playbook by adding multiple `[domain/x.y.z]` sections in `/etc/sssd/sssd.conf`.
@@ -197,3 +197,9 @@ Feel free to modify and use in your environment.
 
 **Ryan Nix**  
 *Red Hat Enterprise Linux + Ansible Automation Enthusiast*
+
+---
+
+## 📚 References
+
+Red Hat Customer Portal. (n.d.). *How to integrate SSSD with Active Directory*. Retrieved from https://access.redhat.com/solutions/5444941
