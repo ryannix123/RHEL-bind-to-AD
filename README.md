@@ -1,4 +1,4 @@
-# 🧩 Join RHEL to Active Directory with SSSD + sudo AD integration
+# 🧩 Join RHEL to Active Directory with SSSD + Sudo Integration
 
 ## Overview
 
@@ -16,6 +16,18 @@ It configures **SSSD** (System Security Services Daemon) for centralized authent
 ✅ Creates home directories automatically for AD users  
 ✅ Works offline (cached credentials)  
 ✅ Tested on RHEL 8 and RHEL 9
+
+### ⚠️ RHEL 10 Compatibility
+
+This playbook is compatible with **RHEL 10** (released May 20, 2025), with the following key changes to be aware of:
+
+- **Enumeration Feature Removed**: The enumeration feature for AD and IdM was deprecated in RHEL 9 and removed in RHEL 10. This typically doesn't affect standard domain join operations.
+
+- **Network Interface Naming**: RHEL 10 no longer supports the legacy `net.ifnames=0` kernel parameter. Predictable network interface names (e.g., `ens3`, `ens192`) are now mandatory.
+
+- **Kernel Update**: RHEL 10 uses kernel 6.12.0 (versus 5.14 in RHEL 9), which provides improved hardware support but doesn't impact AD integration functionality.
+
+The core components (`realm`, `adcli`, `SSSD`) remain fully supported and function as expected in RHEL 10.
 
 ---
 
