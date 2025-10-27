@@ -1,0 +1,112 @@
+---
+- name: Join RHEL system to Active Directory and configure SSSD + sudo
+  hosts: all
+  become: true
+  vars:
+    ad_domain: "ad.example.com"
+    ad_realm: "AD.EXAMPLE.COM"
+    ad_join_user: "administrator"
+    # Prefer to store this securely with Ansible Vault or use --extra-vars "ad_join_password=..."
+    ad_join_password: "{{ vault_ad_join_password }}"
+    ad_sudo_groups:
+    - "linux-admins"
+    - "linux-readonly"
+
+  tasks:
+  - name: Ensure required packages are installed
+    package:
+      name:
+      - realmd
+      - sssd
+      - sssd-tools
+      - adcli
+      - oddjob
+      - oddjob-mkhomedir
+      - samba-common
+      - samba-common-tools
+      - krb5-workstation
+      - policycoreutils-python-utils
+      state: present
+
+  - name: Discover AD domain
+    command: realm discover {{ ad_domain }}
+    register: realm_discovery
+    changed_when: false
+
+  - name: Join Active Directory domain
+    expect:
+      command: >
+        realm join --user={{ ad_join_user }} {{ ad_domain }}
+      responses:
+        (?i)password: "{{ ad_join_password }}"
+    args:
+      creates: "/etc/krb5.keytab"
+
+  - name: Configure SSSD for AD integration
+    copy:
+      dest: /etc/sssd/sssd.conf
+      owner: root
+      group: root
+      mode: '0600'
+      content: |
+        [sssd]
+        domains = {{ ad_domain }}
+        config_file_version = 2
+        services = nss, pam, sudo, ssh
+
+        [nss]
+        entry_negative_timeout = 10
+        entry_cache_timeout = 600
+
+        [pam]
+        offline_credentials_expiration = 3
+        offline_failed_login_attempts = 3
+        offline_failed_login_delay = 5
+
+        [sudo]
+        sudo_provider = ad
+
+        [domain/{{ ad_domain }}]
+        id_provider = ad
+        auth_provider = ad
+        access_provider = ad
+        ad_domain = {{ ad_domain }}
+        krb5_realm = {{ ad_realm }}
+        use_fully_qualified_names = False
+        fallback_homedir = /home/%u
+        default_shell = /bin/bash
+        cache_credentials = True
+        enumerate = False
+        case_sensitive = False
+        krb5_store_password_if_offline = True
+
+  - name: Enable and restart SSSD
+    systemd:
+      name: sssd
+      state: restarted
+      enabled: true
+
+  - name: Configure sudoers for AD groups
+    copy:
+      dest: /etc/sudoers.d/ad_groups
+      owner: root
+      group: root
+      mode: '0440'
+      content: |
+        # Managed by Ansible
+        {% for group in ad_sudo_groups %}
+        %{{ group }} ALL=(ALL) ALL
+        {% endfor %}
+
+  - name: Ensure home directories are auto-created
+    command: authconfig --enablemkhomedir --update
+    when: ansible_facts['distribution_major_version'] is version('8', '>=')
+
+  - name: Verify AD user lookup
+    command: id "{{ ad_join_user }}@{{ ad_domain }}"
+    register: id_output
+    changed_when: false
+
+  - name: Display lookup result
+    debug:
+      var: id_output.stdout
